@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:video_editor/src/controller.dart';
+import 'package:video_editor/src/widgets/text/layers_viewer.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoViewer extends StatelessWidget {
-  const VideoViewer({super.key, required this.controller, this.child});
+  const VideoViewer({
+    super.key,
+    required this.controller,
+    this.child,
+  });
 
   final VideoEditorController controller;
   final Widget? child;
@@ -30,6 +35,14 @@ class VideoViewer extends StatelessWidget {
                 aspectRatio: controller.video.value.aspectRatio,
                 child: child,
               ),
+            LayersViewer(
+              videoEditorController: controller,
+              onUpdate: () {
+                controller.update();
+                // setState(() {});
+              },
+              editable: true,
+            ),
           ],
         ),
       ),
