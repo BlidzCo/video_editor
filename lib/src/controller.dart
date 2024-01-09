@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:video_editor/src/models/cover_data.dart';
 import 'package:video_editor/src/utils/helpers.dart';
 import 'package:video_editor/src/utils/thumbnails.dart';
+import 'package:video_editor/src/widgets/emoji/all_emojies.dart';
 import 'package:video_editor/src/widgets/text/layer.dart';
 import 'package:video_editor/src/widgets/text/text.dart';
 import 'package:video_editor/video_editor.dart';
@@ -434,6 +435,28 @@ class VideoEditorController extends ChangeNotifier {
       MaterialPageRoute(
         builder: (context) => const TextEditorImage(),
       ),
+    );
+
+    if (selectedLayer == null) return;
+
+    _undoLayers.clear();
+    _removedLayers.clear();
+
+    _layers.add(selectedLayer);
+
+    notifyListeners();
+  }
+  //----------//
+  //ADD EMOJI//
+  //----------//
+
+  void onTapEmojiButton(BuildContext context) async {
+    EmojiLayerData? selectedLayer = await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      builder: (BuildContext context) {
+        return const Emojies();
+      },
     );
 
     if (selectedLayer == null) return;
