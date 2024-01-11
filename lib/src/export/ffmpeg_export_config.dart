@@ -87,9 +87,7 @@ abstract class FFmpegVideoEditorConfig {
     double videoWidth = controller.video.value.size.height;
     double videoHeight = controller.video.value.size.width;
 
-    return ''' 
-    -i $overlayPath -filter_complex "[1:v] scale=$videoWidth:$videoHeight [overlay]; [0:v][overlay] overlay=0:0 [out]" -map "[out]" 
-    ''';
+    return "-i $overlayPath -filter_complex '[1:v] scale=$videoWidth:$videoHeight [overlay]; [0:v][overlay] overlay=0:0 [out]' -map '[out]'";
   }
 
   /// Returns the list of all the active filters
