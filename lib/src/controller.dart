@@ -494,10 +494,15 @@ class VideoEditorController extends ChangeNotifier {
   }
 
   Future<String?> layerPath() async {
+    if (_layers.isEmpty) {
+      return null;
+    }
+
     final Uint8List? overlayImage = await _screenShotOverlay();
     if (overlayImage != null) {
+      String timestamp = DateTime.now().toUtc().toIso8601String().replaceAll('.', '_');
       final Directory tempDir = await getTemporaryDirectory();
-      final String tempImagePath = '${tempDir.path}/overlay_image.png';
+      final String tempImagePath = '${tempDir.path}/temp_overlay_$timestamp.png';
       File(tempImagePath).writeAsBytesSync(overlayImage);
 
       return tempImagePath;

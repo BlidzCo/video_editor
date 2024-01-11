@@ -80,15 +80,7 @@ abstract class FFmpegVideoEditorConfig {
   ///
   /// The result is in format `scale=width*scale:height*scale`
   String get scaleCmd => scale == 1.0 ? "" : "scale=iw*$scale:ih*$scale";
-
-  Future<String> textOverlaysCmd() async {
-    final String? overlayPath = await controller.layerPath();
-
-    double videoWidth = controller.video.value.size.height;
-    double videoHeight = controller.video.value.size.width;
-
-    return "-i '$overlayPath' -filter_complex 'overlay=50:main_h-overlay_h-50'";
-  }
+  String get textOverlaysCmd => controller.layers.isNotEmpty ? "overlay=0:0" : "";
 
   /// Returns the list of all the active filters
   List<String> getExportFilters() {
@@ -97,6 +89,7 @@ abstract class FFmpegVideoEditorConfig {
       cropCmd,
       scaleCmd,
       rotationCmd,
+      textOverlaysCmd,
     ];
     filters.removeWhere((item) => item.isEmpty);
     return filters;
@@ -105,7 +98,7 @@ abstract class FFmpegVideoEditorConfig {
   /// Returns the `-filter:v` (-vf alias) command to use in FFmpeg execution
   String filtersCmd(List<String> filters) {
     filters.removeWhere((item) => item.isEmpty);
-    return filters.isNotEmpty ? "-vf '${filters.join(",")}'" : "";
+    return filters.isNotEmpty ? "-filter_complex '${filters.join(",")}'" : "";
   }
 
   /// Returns the output path of the exported file
@@ -190,14 +183,15 @@ class VideoFFmpegVideoEditorConfig extends FFmpegVideoEditorConfig {
     final String videoPath = controller.file.path;
     final String outputPath = await getOutputPath(filePath: videoPath, format: format);
     final List<String> filters = getExportFilters();
-    final String textCmd = await textOverlaysCmd();
+    final String? layerPath = await controller.layerPath();
+    final String overlayPath = (layerPath?.isNotEmpty ?? false) ? "-i \'$layerPath\'" : '';
 
     return FFmpegVideoEditorExecute(
       command: commandBuilder != null
           ? commandBuilder!(this, "\'$videoPath\'", "\'$outputPath\'")
           // use -y option to overwrite the output
           // use -c copy if there is not filters to avoid re-encoding the video and speedup the process
-          : "$startTrimCmd -i \'$videoPath\' $toTrimCmd $textCmd ${filtersCmd(filters)} $gifCmd ${filters.isEmpty ? '-c copy' : ''} -y \'$outputPath\'",
+          : "$startTrimCmd -i \'$videoPath\' $overlayPath $toTrimCmd ${filtersCmd(filters)} $gifCmd ${filters.isEmpty ? '-c copy' : ''} -y \'$outputPath\'",
       outputPath: outputPath,
     );
   }
