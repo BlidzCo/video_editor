@@ -81,10 +81,27 @@ abstract class FFmpegVideoEditorConfig {
   /// The result is in format `scale=width*scale:height*scale`
   String get scaleCmd => scale == 1.0 ? "" : "scale=iw*$scale:ih*$scale";
 
+  Future<String> textOverlaysCmd() async {
+    final String? overlayPath = await controller.layerPath();
+
+    double videoWidth = controller.video.value.size.height;
+    double videoHeight = controller.video.value.size.width;
+
+    return ''' 
+    -i $overlayPath -filter_complex "[1:v] scale=$videoWidth:$videoHeight [overlay]; [0:v][overlay] overlay=0:0 [out]" -map "[out]" 
+    ''';
+  }
+
   /// Returns the list of all the active filters
-  List<String> getExportFilters() {
+  Future<List<String>> getExportFilters() async {
     if (!isFiltersEnabled) return [];
-    final List<String> filters = [cropCmd, scaleCmd, rotationCmd];
+    final String textCmd = await textOverlaysCmd();
+    final List<String> filters = [
+      textCmd,
+      cropCmd,
+      scaleCmd,
+      rotationCmd,
+    ];
     filters.removeWhere((item) => item.isEmpty);
     return filters;
   }
@@ -100,8 +117,7 @@ abstract class FFmpegVideoEditorConfig {
     required String filePath,
     required FileFormat format,
   }) async {
-    final String tempPath =
-        outputDirectory ?? (await getTemporaryDirectory()).path;
+    final String tempPath = outputDirectory ?? (await getTemporaryDirectory()).path;
     final String n = name ?? path.basenameWithoutExtension(filePath);
     final int epoch = DateTime.now().millisecondsSinceEpoch;
     return "$tempPath/${n}_$epoch.${format.extension}";
@@ -115,8 +131,7 @@ abstract class FFmpegVideoEditorConfig {
   /// ```
   /// Returns the [double] progress value between 0.0 and 1.0.
   double getFFmpegProgress(int time) {
-    final double progressValue =
-        time / controller.trimmedDuration.inMilliseconds;
+    final double progressValue = time / controller.trimmedDuration.inMilliseconds;
     return progressValue.clamp(0.0, 1.0);
   }
 
@@ -159,17 +174,15 @@ class VideoFFmpegVideoEditorConfig extends FFmpegVideoEditorConfig {
 
   /// Returns the FFmpeg command to make the generated GIF to loop infinitely
   /// [see FFmpeg doc](https://ffmpeg.org/ffmpeg-formats.html#gif-2)
-  String get gifCmd =>
-      format.extension == VideoExportFormat.gif.extension ? "-loop 0" : "";
+  String get gifCmd => format.extension == VideoExportFormat.gif.extension ? "-loop 0" : "";
 
   /// Returns the list of all the active filters, including the GIF filter
   @override
-  List<String> getExportFilters() {
-    final List<String> filters = super.getExportFilters();
+  Future<List<String>> getExportFilters() async {
+    final List<String> filters = await super.getExportFilters();
     final bool isGif = format.extension == VideoExportFormat.gif.extension;
     if (isGif) {
-      filters.add(
-          'fps=${format is GifExportFormat ? (format as GifExportFormat).fps : VideoExportFormat.gif.fps}');
+      filters.add('fps=${format is GifExportFormat ? (format as GifExportFormat).fps : VideoExportFormat.gif.fps}');
     }
     return filters;
   }
@@ -179,9 +192,8 @@ class VideoFFmpegVideoEditorConfig extends FFmpegVideoEditorConfig {
   @override
   Future<FFmpegVideoEditorExecute> getExecuteConfig() async {
     final String videoPath = controller.file.path;
-    final String outputPath =
-        await getOutputPath(filePath: videoPath, format: format);
-    final List<String> filters = getExportFilters();
+    final String outputPath = await getOutputPath(filePath: videoPath, format: format);
+    final List<String> filters = await getExportFilters();
 
     return FFmpegVideoEditorExecute(
       command: commandBuilder != null
@@ -230,8 +242,7 @@ class CoverFFmpegVideoEditorConfig extends FFmpegVideoEditorConfig {
         imageFormat: ImageFormat.JPEG,
         thumbnailPath: (await getTemporaryDirectory()).path,
         video: controller.file.path,
-        timeMs: controller.selectedCoverVal?.timeMs ??
-            controller.startTrim.inMilliseconds,
+        timeMs: controller.selectedCoverVal?.timeMs ?? controller.startTrim.inMilliseconds,
         quality: quality,
       );
 
@@ -245,9 +256,8 @@ class CoverFFmpegVideoEditorConfig extends FFmpegVideoEditorConfig {
       debugPrint('VideoThumbnail library error while exporting the cover');
       return null;
     }
-    final String outputPath =
-        await getOutputPath(filePath: coverPath, format: format);
-    final List<String> filters = getExportFilters();
+    final String outputPath = await getOutputPath(filePath: coverPath, format: format);
+    final List<String> filters = await getExportFilters();
 
     return FFmpegVideoEditorExecute(
       command: commandBuilder != null

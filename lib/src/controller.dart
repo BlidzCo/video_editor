@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:screenshot/screenshot.dart';
 import 'package:video_editor/src/models/cover_data.dart';
 import 'package:video_editor/src/utils/helpers.dart';
 import 'package:video_editor/src/utils/thumbnails.dart';
@@ -91,11 +94,16 @@ class VideoEditorController extends ChangeNotifier {
   Duration _trimStart = Duration.zero;
   final VideoPlayerController _video;
 
+  final ScreenshotController _screenshotController = ScreenshotController();
+
   // Selected cover value
   final ValueNotifier<CoverData?> _selectedCover = ValueNotifier<CoverData?>(null);
 
   /// Get the [VideoPlayerController]
   VideoPlayerController get video => _video;
+
+  //Create an instance of ScreenshotController
+  ScreenshotController get screenshotController => _screenshotController;
 
   /// Get the [VideoPlayerController.value.initialized]
   bool get initialized => _video.value.isInitialized;
@@ -475,4 +483,25 @@ class VideoEditorController extends ChangeNotifier {
   }
 
   void update() => notifyListeners();
+
+  Future<Uint8List?> _screenShotOverlay() async {
+    Uint8List? capturedImage = await screenshotController.capture().catchError((onError) {
+      print(onError);
+      return null;
+    });
+
+    return capturedImage;
+  }
+
+  Future<String?> layerPath() async {
+    final Uint8List? overlayImage = await _screenShotOverlay();
+    if (overlayImage != null) {
+      final Directory tempDir = await getTemporaryDirectory();
+      final String tempImagePath = '${tempDir.path}/overlay_image.png';
+      File(tempImagePath).writeAsBytesSync(overlayImage);
+
+      return tempImagePath;
+    }
+    return null;
+  }
 }
