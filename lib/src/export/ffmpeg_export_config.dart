@@ -91,11 +91,9 @@ abstract class FFmpegVideoEditorConfig {
   }
 
   /// Returns the list of all the active filters
-  Future<List<String>> getExportFilters() async {
+  List<String> getExportFilters() {
     if (!isFiltersEnabled) return [];
-    final String textCmd = await textOverlaysCmd();
     final List<String> filters = [
-      textCmd,
       cropCmd,
       scaleCmd,
       rotationCmd,
@@ -176,8 +174,8 @@ class VideoFFmpegVideoEditorConfig extends FFmpegVideoEditorConfig {
 
   /// Returns the list of all the active filters, including the GIF filter
   @override
-  Future<List<String>> getExportFilters() async {
-    final List<String> filters = await super.getExportFilters();
+  List<String> getExportFilters() {
+    final List<String> filters = super.getExportFilters();
     final bool isGif = format.extension == VideoExportFormat.gif.extension;
     if (isGif) {
       filters.add('fps=${format is GifExportFormat ? (format as GifExportFormat).fps : VideoExportFormat.gif.fps}');
@@ -191,14 +189,15 @@ class VideoFFmpegVideoEditorConfig extends FFmpegVideoEditorConfig {
   Future<FFmpegVideoEditorExecute> getExecuteConfig() async {
     final String videoPath = controller.file.path;
     final String outputPath = await getOutputPath(filePath: videoPath, format: format);
-    final List<String> filters = await getExportFilters();
+    final List<String> filters = getExportFilters();
+    final String textCmd = await textOverlaysCmd();
 
     return FFmpegVideoEditorExecute(
       command: commandBuilder != null
           ? commandBuilder!(this, "\'$videoPath\'", "\'$outputPath\'")
           // use -y option to overwrite the output
           // use -c copy if there is not filters to avoid re-encoding the video and speedup the process
-          : "$startTrimCmd -i \'$videoPath\' $toTrimCmd ${filtersCmd(filters)} $gifCmd ${filters.isEmpty ? '-c copy' : ''} -y \'$outputPath\'",
+          : "$startTrimCmd -i \'$videoPath\' $toTrimCmd $textCmd ${filtersCmd(filters)} $gifCmd ${filters.isEmpty ? '-c copy' : ''} -y \'$outputPath\'",
       outputPath: outputPath,
     );
   }
@@ -255,7 +254,7 @@ class CoverFFmpegVideoEditorConfig extends FFmpegVideoEditorConfig {
       return null;
     }
     final String outputPath = await getOutputPath(filePath: coverPath, format: format);
-    final List<String> filters = await getExportFilters();
+    final List<String> filters = getExportFilters();
 
     return FFmpegVideoEditorExecute(
       command: commandBuilder != null
