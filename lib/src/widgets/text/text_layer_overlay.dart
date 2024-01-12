@@ -85,7 +85,7 @@ class _TextLayerOverlayState extends State<TextLayerOverlay> {
                 TextButton(
                   onPressed: () {
                     setState(() {
-                      widget.layer.backgroundOpacity = 0.5;
+                      widget.layer.size = 18;
                       widget.onUpdate();
                     });
                   },
