@@ -11,7 +11,7 @@ class TextEditorImage extends StatefulWidget {
 class _TextEditorImageState extends State<TextEditorImage> {
   TextEditingController name = TextEditingController();
   Color currentColor = Colors.white;
-  double slider = 32.0;
+  double textDefaultSize = 18;
   TextAlign align = TextAlign.left;
 
   @override
@@ -59,7 +59,7 @@ class _TextEditorImageState extends State<TextEditorImage> {
                     background: Colors.transparent,
                     text: name.text,
                     color: currentColor,
-                    size: slider.toDouble(),
+                    size: textDefaultSize,
                     align: align,
                   ),
                 );
