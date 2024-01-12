@@ -6,7 +6,7 @@ class Layer {
   late double rotation, scale, opacity;
 
   Layer({
-    this.offset = const Offset(64, 64),
+    this.offset = const Offset(50, 50),
     this.opacity = 1,
     this.rotation = 0,
     this.scale = 1,
@@ -85,10 +85,10 @@ class TextLayerData extends Layer {
 
   TextLayerData({
     required this.text,
-    this.size = 64,
+    this.size = 36,
     this.color = Colors.white,
     this.background = Colors.transparent,
-    this.backgroundOpacity = 0,
+    this.backgroundOpacity = 0.5,
     this.align = TextAlign.left,
     super.offset,
     super.opacity,
